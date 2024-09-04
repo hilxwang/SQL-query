@@ -1,0 +1,126 @@
+--2024 forecasted CORE & PAYD Volumes on RMO LEVEL - monthly
+WITH MonthlyData AS (
+    SELECT  
+        CONCAT(YEAR(loadtime), '-', RIGHT('0' + CAST(MONTH(loadtime) AS VARCHAR(2)), 2)) AS Date,
+        YEAR(loadtime) AS Year,
+        MONTH(loadtime) AS Month,
+        Zone,
+        RMO,
+        ROUND(SUM(CASE WHEN class NOT IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE,
+        ROUND(SUM(CASE WHEN class = 'PAYD' THEN [Prod. Plan Pd] ELSE 0 END), 0) AS PAYD,
+        ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL
+    FROM prodVplan.prod_plan_mapped ppm 
+    WHERE YEAR(loadtime) = 2024 
+      AND rmo IS NOT NULL 
+      AND Zone IN ('MW Zone','N Zone','Central Zone', 'South Zone','W Zone')
+    GROUP BY YEAR(loadtime), MONTH(loadtime), Zone, RMO
+)
+SELECT 
+    md.Date,
+    md.Zone,
+    md.RMO,
+    md.CORE * dtt.Working_Days_Including_Holidays AS CORE,
+    md.PAYD * dtt.Working_Days_Including_Holidays AS PAYD,
+    md.TOTAL * dtt.Working_Days_Including_Holidays AS TOTAL
+FROM MonthlyData md
+JOIN (
+    SELECT 
+        [Year], 
+        [Mounth num] AS Month, 
+        SUM(CAST([Working_Days_Including_Holidays] AS int)) AS Working_Days_Including_Holidays
+    FROM PowerBI.dTimeTable
+    WHERE [Year] = 2024
+    GROUP BY [Year], [Mounth num]
+) dtt ON md.Year = dtt.[Year] AND md.Month = dtt.[Month]
+ORDER BY md.Year, md.Month, md.Zone, md.RMO;
+
+
+
+
+
+
+
+
+WITH ActualData AS (
+    SELECT  
+        ds AS Date,
+        Zone,
+        rmo,
+        ROUND(SUM(CASE WHEN major_class NOT IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE_Actual,
+        ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD_Actual,
+        ROUND(SUM(value), 0) AS TOTAL_Actual
+    FROM PowerBI.KeyMetrics_from_2022 kmf 
+    WHERE metric = 'Fulfilled Reqs'
+        AND YEAR(ds) = 2024
+        AND LTRIM(RTRIM(rmo)) != ''
+        AND Zone IN ('MW Zone','N Zone','South Zone','Central Zone', 'South Zone','W Zone')
+    GROUP BY ds, Zone, rmo
+),
+ForecastData AS (
+    SELECT  
+        CONCAT(YEAR(loadtime), '-', RIGHT('0' + CAST(MONTH(loadtime) AS VARCHAR(2)), 2)) AS Date,
+        YEAR(loadtime) AS Year,
+        MONTH(loadtime) AS Month,
+        Zone,
+        RMO,
+        ROUND(SUM(CASE WHEN class NOT IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE_Forecast,
+        ROUND(SUM(CASE WHEN class = 'PAYD' THEN [Prod. Plan Pd] ELSE 0 END), 0) AS PAYD_Forecast,
+        ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL_Forecast
+    FROM prodVplan.prod_plan_mapped ppm 
+    WHERE YEAR(loadtime) = 2024 
+        AND rmo IS NOT NULL 
+        AND Zone IN ('MW Zone','N Zone','Central Zone', 'South Zone','W Zone')
+    GROUP BY YEAR(loadtime), MONTH(loadtime), Zone, RMO
+),
+BusinessDays AS (
+    SELECT 
+        [Year], 
+        [Mounth num] AS Month, 
+        SUM(CAST([Working_Days_Including_Holidays] AS int)) AS Working_Days_Including_Holidays
+    FROM PowerBI.dTimeTable
+    WHERE [Year] = 2024
+    GROUP BY [Year], [Mounth num]
+),
+ForecastWithBusinessDays AS (
+    SELECT 
+        md.Date,
+        md.Zone,
+        md.RMO,
+        md.CORE_Forecast * dtt.Working_Days_Including_Holidays AS CORE_Forecast,
+        md.PAYD_Forecast * dtt.Working_Days_Including_Holidays AS PAYD_Forecast,
+        md.TOTAL_Forecast * dtt.Working_Days_Including_Holidays AS TOTAL_Forecast
+    FROM ForecastData md
+    JOIN BusinessDays dtt ON md.Year = dtt.[Year] AND md.Month = dtt.[Month]
+)
+SELECT 
+    ad.Date,
+    ad.Zone,
+    ad.RMO,
+    ad.CORE_Actual,
+    ad.PAYD_Actual,
+    ad.TOTAL_Actual,
+    fwbd.CORE_Forecast,
+    fwbd.PAYD_Forecast,
+    fwbd.TOTAL_Forecast
+FROM ActualData ad
+LEFT JOIN ForecastWithBusinessDays fwbd ON ad.Date = fwbd.Date AND ad.Zone = fwbd.Zone AND ad.RMO = fwbd.RMO
+UNION ALL
+SELECT 
+    fwbd.Date,
+    fwbd.Zone,
+    fwbd.RMO,
+    ad.CORE_Actual,
+    ad.PAYD_Actual,
+    ad.TOTAL_Actual,
+    fwbd.CORE_Forecast,
+    fwbd.PAYD_Forecast,
+    fwbd.TOTAL_Forecast
+FROM ForecastWithBusinessDays fwbd
+LEFT JOIN ActualData ad ON ad.Date = fwbd.Date AND ad.Zone = fwbd.Zone AND ad.RMO = fwbd.RMO
+ORDER BY Date, Zone, RMO;
+
+
+
+
+
+
