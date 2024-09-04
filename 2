@@ -1,0 +1,60 @@
+
+SELECT metric, YEAR(date) as year, MONTH(date) as month, round(sum(value),0) as Total
+FROM CIOX_Ext_Feed.prodVplan.Fact f 
+group by metric, YEAR(date), MONTH(date)
+order by metric, YEAR(date), MONTH(date);
+
+select * from prodVplan.prod_plan_mapped ppm WHERE [Prod. Plan Pd] >= 1
+
+select distinct class from prodVplan.prod_plan_mapped ppm WHERE [Prod. Plan Pd] >= 1
+
+select year(loadtime) as year, month(loadtime) as month, sum(select sum([Prod. Plan Pd]) from prodVplan.prod_plan_mapped ppm where Class = 'PAYD')
+from prodVplan.prod_plan_mapped ppm 
+where 
+
+select year(loadtime),Month(loadtime), round(sum([Prod. Plan Pd]),0)
+from prodVplan.prod_plan_mapped ppm 
+where CLASS in ('PAYD')
+group by year(loadtime), Month(loadtime)
+order by year(loadtime), Month(loadtime)
+
+select * from prodVplan.prod_plan_mapped ppm 
+
+select * FROM PowerBI.KeyMetrics_from_2022 kmf 
+
+select * 
+from PowerBI.KeyMetrics_from_2022 kmf where ds >= '2024-01-01'
+
+--2024 actual CORE & PAYD Volumes on RMO LEVEL 
+ SELECT ds as 'DATE',Zone, rmo,
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from PowerBI.KeyMetrics_from_2022 kmf 
+ WHERE metric in ('Fulfilled Reqs') and RMO IN ('Gregory Yongue')
+ 	and Year(ds) in ('2024')
+ 	and LTRIM(RTRIM(rmo)) != ''
+ 	and Zone in ('MW Zone','N Zone','South Zone','Central Zone', 'South Zone','W Zone')
+ GROUP BY ds, Zone, rmo, metric
+ order by ds, Zone, rmo, metric
+ 
+ --2024 forecasted CORE & PAYD Volumes on RMO LEVEL - daily
+SELECT  
+    CONCAT(YEAR(loadtime), '-', RIGHT('0' + CAST(MONTH(loadtime) AS VARCHAR(2)), 2)) AS 'DATE',
+    Zone,
+    RMO,
+    ROUND(SUM(CASE WHEN class NOT IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE,
+    ROUND(SUM(CASE WHEN class = 'PAYD' THEN [Prod. Plan Pd] ELSE 0 END), 0) AS PAYD,
+    ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL
+FROM prodVplan.prod_plan_mapped ppm 
+WHERE YEAR(loadtime) = 2024 AND rmo IS NOT NULL and Zone in ('MW Zone','N Zone','Central Zone', 'South Zone','W Zone')
+GROUP BY YEAR(loadtime), MONTH(loadtime), Zone, RMO
+ORDER BY YEAR(loadtime), MONTH(loadtime), Zone, RMO
+
+--bd
+ select [Year], [Mounth num],sum (cast ([Working_Days_Including_Holidays]as int))
+ from PowerBI.dTimeTable
+ WHERE [Year]  in ('2024') 
+ group by [Year], [Mounth num]
+ 
+ select distinct loadtime from prodVplan.prod_plan_mapped ppm where year(loadtime) >= '2024'
