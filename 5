@@ -1,0 +1,113 @@
+-- Step 1: Compute the maximum loadtime for each combination
+WITH MaxLoadtimePerMonth AS (
+    SELECT
+        YEAR(loadtime) AS Year,
+        MONTH(loadtime) AS Month,
+        Zone,
+        VPO,
+        HealthSys,
+        MAX(loadtime) AS MaxLoadtime
+    FROM prodVplan.prod_plan_mapped
+    WHERE YEAR(loadtime) = 2024 and MONTH(loadtime) = 7
+        AND rmo IS NOT NULL
+        AND Zone IN ('MW Zone','N Zone','Central Zone', 'South Zone','W Zone')
+    GROUP BY YEAR(loadtime), MONTH(loadtime), Zone, VPO, HealthSys
+),
+-- Step 2: Filter forecast data based on the latest loadtime
+FilteredForecastData AS (
+    SELECT  
+        CONCAT(YEAR(ppm.loadtime), '-', RIGHT('0' + CAST(MONTH(ppm.loadtime) AS VARCHAR(2)), 2)) AS Date,
+        ppm.Zone, 
+        ppm.VPO,
+        ppm.HealthSys,
+        ROUND(SUM(CASE WHEN ppm.class NOT IN ('PAYD') THEN ppm.[Prod. Plan Pd] ELSE 0 END), 0) AS CORE_Forecast,
+        ROUND(SUM(CASE WHEN ppm.class = 'PAYD' THEN ppm.[Prod. Plan Pd] ELSE 0 END), 0) AS PAYD_Forecast,
+        ROUND(SUM(ppm.[Prod. Plan Pd]), 0) AS TOTAL_Forecast,
+        YEAR(ppm.loadtime) AS Year,
+        MONTH(ppm.loadtime) AS Month
+    FROM prodVplan.prod_plan_mapped ppm
+    JOIN MaxLoadtimePerMonth mlp
+        ON ppm.Zone = mlp.Zone
+        AND ppm.VPO = mlp.VPO
+        AND ppm.HealthSys = mlp.HealthSys
+        AND ppm.loadtime = mlp.MaxLoadtime
+    GROUP BY CONCAT(YEAR(ppm.loadtime), '-', RIGHT('0' + CAST(MONTH(ppm.loadtime) AS VARCHAR(2)), 2)), ppm.Zone, ppm.VPO, ppm.HealthSys, YEAR(ppm.loadtime), MONTH(ppm.loadtime)
+),
+-- Step 3: Calculate the number of business days for each month
+BusinessDays AS (
+    SELECT 
+        [Year], 
+        [Mounth num] AS Month, 
+        SUM(CAST([Working_Days_Including_Holidays] AS int)) AS Working_Days_Including_Holidays
+    FROM PowerBI.dTimeTable
+    WHERE [Year] = 2024
+    GROUP BY [Year], [Mounth num]
+),
+-- Step 4: Combine filtered forecast data with business days
+ForecastWithBusinessDays AS (
+    SELECT 
+        md.Date,
+        md.Zone,
+        md.VPO,
+        md.HealthSys,
+        md.CORE_Forecast * dtt.Working_Days_Including_Holidays AS CORE_Forecast,
+        md.PAYD_Forecast * dtt.Working_Days_Including_Holidays AS PAYD_Forecast,
+        md.TOTAL_Forecast * dtt.Working_Days_Including_Holidays AS TOTAL_Forecast
+    FROM FilteredForecastData md
+    JOIN BusinessDays dtt 
+        ON md.Year = dtt.[Year] 
+        AND md.Month = dtt.[Month]
+),
+-- Step 5: Combine actual and forecast data, ensuring no duplicates
+ActualData AS (
+    SELECT  
+        LEFT(CONVERT(varchar, ds, 23), 7) AS Date,
+        Zone,
+        VPO, 
+        health_system_group,
+        ROUND(SUM(CASE WHEN major_class NOT IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE_Actual,
+        ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD_Actual,
+        ROUND(SUM(value), 0) AS TOTAL_Actual
+    FROM PowerBI.KeyMetrics_from_2022 kmf 
+    WHERE metric = 'Fulfilled Reqs'
+        AND YEAR(ds) = 2024 AND Month(ds)= 7
+        AND LTRIM(RTRIM(rmo)) != ''
+        AND Zone IN ('MW Zone','N Zone','South Zone','Central Zone', 'South Zone','W Zone')
+    GROUP BY LEFT(CONVERT(varchar, ds, 23), 7), Zone, VPO, health_system_group
+)
+SELECT 
+    ad.Date,
+    ad.Zone,
+    ad.VPO,
+    ad.health_system_group as HealthSys,
+    ad.CORE_Actual,
+    ad.PAYD_Actual,
+    ad.TOTAL_Actual,
+    fwbd.CORE_Forecast,
+    fwbd.PAYD_Forecast,
+    fwbd.TOTAL_Forecast
+FROM ActualData ad
+LEFT JOIN ForecastWithBusinessDays fwbd 
+    ON ad.Date = fwbd.Date 
+    AND ad.Zone = fwbd.Zone 
+    AND ad.health_system_group = fwbd.HealthSys
+    AND ad.VPO = fwbd.VPO
+UNION
+SELECT 
+    fwbd.Date,
+    fwbd.Zone,
+    fwbd.VPO,
+    fwbd.HealthSys,
+    ad.CORE_Actual,
+    ad.PAYD_Actual,
+    ad.TOTAL_Actual,
+    fwbd.CORE_Forecast,
+    fwbd.PAYD_Forecast,
+    fwbd.TOTAL_Forecast
+FROM ForecastWithBusinessDays fwbd
+LEFT JOIN ActualData ad 
+    ON ad.Date = fwbd.Date 
+    AND ad.Zone = fwbd.Zone 
+    AND ad.health_system_group = fwbd.HealthSys
+    AND ad.VPO = fwbd.VPO
+ORDER BY Date, Zone, VPO, HealthSys;
