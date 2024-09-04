@@ -1,0 +1,342 @@
+SELECT metric, YEAR(Month), MONTH(Month), round(sum(value),0) as Total
+FROM CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+group by metric, YEAR(Month),MONTH(Month)
+order by metric, YEAR(Month),MONTH(Month);
+
+SELECT DISTINCT metric,Month, round(sum(value),0) as Total
+FROM CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+group by metric, Month
+order by metric, Month;
+
+select metric,Year(ds),MONTH(ds), round(sum(value),0) 
+from PowerBI.KeyMetrics_from_2022 kmf
+WHERE metric IN('Fulfilled Reqs','HS Fulfilled Reqs','Manual_Fulfilled_Reqs')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+SELECT distinct metric FROM PowerBI.KeyMetrics_from_2022 kmf 
+
+select metric,Year(ds),MONTH(ds), round(sum(value),0) 
+from PowerBI.KeyMetrics_from_2022 kmf
+WHERE metric IN('Manual_Fulfilled_Reqs','Digital fulfilled')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+select metric,Year(ds),MONTH(ds), round(sum(value),0) 
+from PowerBI.KeyMetrics_from_2022 kmf
+WHERE metric IN('Fulfilled Reqs Budget','Digital Fulfilled Reqs Budget') and major_class in ('PAYD','PAYI','ATTY','COPY','FAC','GOV','INS','PAT')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+select DISTINCT major_class from PowerBI.KeyMetrics_from_2022 kmf 
+
+select DISTINCT top 10 * from PowerBI.KeyMetrics_from_2022 kmf 
+
+select distinct metric from PowerBI.KeyMetrics_from_2022 kmf 
+
+--PAYD ACTUAL
+select metric,Year(ds),MONTH(ds), sum(value)
+from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs','HS Fulfilled Reqs','Digital fulfilled','Manual_Fulfilled_Reqs') and major_class in ('PAYD') and Year(ds) in ('2024')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+--PAYD ACTUAL-fulfilled volume
+select metric,Year(ds),MONTH(ds), sum(value)
+from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs') and major_class in ('PAYD') and Year(ds) in ('2024')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+--CORE ACTUAL ???
+select metric,Year(ds),MONTH(ds), sum(value)
+from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs','HS Fulfilled Reqs','Digital fulfilled','Manual_Fulfilled_Reqs') and major_class in ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+--2024 June CORE actual
+select metric, year(ds), month(ds),round(sum(value),0)
+FROM PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs')and partner_sites in ('No')
+and major_class not in ('PAYD')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+select distinct ds from PowerBI.KeyMetrics_from_2022 kmf where year(ds) in ('2024') and month(ds) in ('6')
+
+SELECT *
+FROM CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+where Year(ds) in ('2022')
+
+SELECT *
+FROM CIOX_Ext_Feed.prodVplan.Fact f 
+where Year(ds) in ('2022')
+
+
+--CORE
+select metric, year(ds), month(ds),round(sum(value),0)
+FROM PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs')
+and major_class in ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+--PAYD
+select metric, year(ds), month(ds),round(sum(value),0)
+FROM PowerBI.KeyMetrics_from_2022 kmf 
+where metric in ('Fulfilled Reqs')
+and major_class in ('PAYD')
+group by metric, Year(ds),MONTH(ds)
+order by metric,Year(ds),MONTH(ds)
+
+---Major Class
+SELECT 
+  metric, 
+  YEAR(ds) AS year, 
+  MONTH(ds) AS month,
+  ROUND(SUM(CASE WHEN major_class IN ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+FROM 
+  PowerBI.KeyMetrics_from_2022 kmf
+WHERE 
+  metric IN ('Fulfilled Reqs')
+  AND major_class IN ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT', 'PAYD')
+GROUP BY 
+  metric, YEAR(ds), MONTH(ds)
+ORDER BY 
+  metric, YEAR(ds), MONTH(ds);
+
+ --ALL Class
+SELECT 
+  metric, 
+  YEAR(ds) AS year, 
+  MONTH(ds) AS month,
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+FROM 
+  PowerBI.KeyMetrics_from_2022 kmf
+WHERE 
+  metric IN ('Fulfilled Reqs')
+  and metric is not null 
+GROUP BY 
+  metric, YEAR(ds), MONTH(ds)
+ORDER BY 
+  metric, YEAR(ds), MONTH(ds);
+  
+  --ALL Class Budget
+SELECT 
+  metric,
+  YEAR(ds) AS year, 
+  MONTH(ds) AS month,
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+FROM 
+  PowerBI.KeyMetrics_from_2022 kmf
+WHERE 
+  metric IN ('Fulfilled Reqs Budget')
+  AND major_class IN ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT','PAYD')
+  AND YEAR(ds) in ('2022')
+GROUP BY 
+  metric, major_class, YEAR(ds), MONTH(ds)
+ORDER BY
+  metric, major_class, YEAR(ds), MONTH(ds);
+  
+ -- PRO & FAC(FACILITY)
+ SELECT *
+ from PowerBI.KeyMetrics_from_2022 kmf2 
+ where major_class like ('%%PRO%%') or major_class like ('%%FAC%%')
+ 
+ 
+ --ALL Class Budget Match with Brian
+SELECT 
+  major_class,
+  YEAR(ds) AS year, 
+  MONTH(ds) AS month,
+  ROUND(SUM(value), 0) AS TOTAL
+FROM 
+  PowerBI.KeyMetrics_from_2022 kmf
+WHERE 
+  metric IN ('Fulfilled Reqs Budget')
+  AND major_class IN ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT','PRO','PAYD','PAYI')
+  AND YEAR(ds) in ('2022')
+GROUP BY 
+  metric, major_class, YEAR(ds), MONTH(ds)
+ORDER BY
+  metric, major_class, YEAR(ds), MONTH(ds);
+ 
+ -- comparion with Cognos--actual volume
+ SELECT metric, ds, 
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from PowerBI.KeyMetrics_from_2022 kmf 
+ WHERE metric in ('Fulfilled Reqs','HS Fulfilled Reqs')
+ AND major_class IN ('PAYI','ATTY','COPY','FAC','GOV','INS','PAT','PAYD')
+ GROUP BY metric, ds
+ order by metric, ds
+ 
+ -- ALL CLASS
+  SELECT metric, ds, 
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from PowerBI.KeyMetrics_from_2022 kmf 
+ WHERE metric in ('Fulfilled Reqs','HS Fulfilled Reqs')
+ GROUP BY metric, ds
+ order by metric, ds
+ 
+ -- 2022 actual CORE VS PAYD Volumes
+  SELECT metric, ds, 
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from PowerBI.KeyMetrics_from_2022 kmf 
+ WHERE metric in ('Fulfilled Reqs','HS Fulfilled Reqs') and Year(ds) in ('2022')
+ GROUP BY metric, ds
+ order by metric, ds
+ 
+  -- 2024 actual CORE VS PAYD Volumes
+ SELECT ds, metric,
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from PowerBI.KeyMetrics_from_2022 kmf 
+ WHERE metric in ('Digital fulfilled','Manual_Fulfilled_Reqs','Fulfilled Reqs','HS Fulfilled Reqs') and Year(ds) in ('2024')
+ GROUP BY metric, ds
+ order by metric, ds
+ 
+SELECT *
+from PowerBI.KeyMetrics_from_2022 kmf 
+ 
+ SELECT distinct metric 
+ from PowerBI.KeyMetrics_from_2022 kmf 
+  
+  -- 2022 forecast CORE VS PAYD Volumes no partner
+ 
+  select * from prodVplan.prod_plan_mapped ppm WHERE YEAR(loadtime) in ('2022');
+ 
+  select YEAR(loadtime),MONTH(loadtime), DAY (loadtime),ROUND(SUM(CASE WHEN CLASS  not IN ('PAYD') THEN [Production Plan Minus Partner]  ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN CLASS  = 'PAYD' THEN [Production Plan Minus Partner]  ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM([Production Plan Minus Partner]), 0) AS TOTAL
+  FROM prodVplan.prod_plan_mapped ppm 
+  WHERE YEAR(loadtime) in ('2022','2023','2024')
+  GROUP BY YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  order by YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  
+   -- 2022 forecast CORE VS PAYD Volumes all
+   select YEAR(loadtime),MONTH(loadtime), DAY (loadtime),ROUND(SUM(CASE WHEN CLASS  not IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN CLASS  = 'PAYD' THEN [Prod. Plan Pd]  ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL
+  FROM prodVplan.prod_plan_mapped ppm 
+  WHERE YEAR(loadtime) in ('2022','2023','2024')
+  GROUP BY YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  order by YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  
+  SELECT MAX(DAY(loadtime))
+  
+  
+  select * from prodVplan.bd_table bt 
+  
+  SELECT metric, ds, 
+  ROUND(SUM(CASE WHEN major_class not IN ('PAYD') THEN value ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN major_class = 'PAYD' THEN value ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM(value), 0) AS TOTAL
+ from prodVplan.prod_plan_mapped ppm  
+ WHERE metric in ('Fulfilled Reqs','HS Fulfilled Reqs') and Year(ds) in ('2022')
+ GROUP BY metric, ds
+ order by metric, ds
+ 
+ 
+ -- Rastko's query for forecasting from 2022
+  select YEAR(loadtime),MONTH(loadtime), DAY (loadtime),ROUND(SUM(CASE WHEN CLASS  not IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN CLASS  = 'PAYD' THEN [Prod. Plan Pd]  ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL
+  FROM (select * from CIOX_Ext_Feed.prodVplan.prod_plan_mapped ppm where loadtime in (
+	SELECT MAX(loadtime) as date
+	FROM CIOX_Ext_Feed.prodVplan.prod_plan_mapped ppm2 
+	WHERE YEAR(loadtime) in (select distinct YEAR(loadtime) from CIOX_Ext_Feed.prodVplan.prod_plan_mapped) and MONTH(loadtime) in (select distinct MONTH(loadtime) from CIOX_Ext_Feed.prodVplan.prod_plan_mapped)
+	GROUP BY YEAR(loadtime), MONTH(loadtime))) as Rastko
+  WHERE YEAR(loadtime) in ('2022','2023','2024')
+  GROUP BY YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  order by YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+ 
+ SELECT *
+ from CIOX_Ext_Feed.prodVplan.bd_table bt 
+ 
+ select * from CIOX_Ext_Feed.Daily.dTimeTable dtt where year(Date) in ('2022')
+ 
+ select * from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ 
+-- 2023 bd, don't add filter, see below
+ select [Mounth num], sum(cast([Working_Days_Mon-Fri]as int)), sum (cast ([Working_Days_Including_Holidays]as int))
+ from PowerBI.dTimeTable
+ WHERE [Year]  in ('2023') and federal_holidays in ('0') and holiday_title is null 
+ and [Day_of_Week_Name] not in ('Sunday','Saturday')
+ group by [Mounth num]
+ 
+ -- 2022 bd correct
+ select [Mounth num],sum (cast ([Working_Days_Including_Holidays]as int))
+ from PowerBI.dTimeTable
+ WHERE [Year]  in ('2022') 
+ group by [Mounth num]
+-- 2023 correct
+ select [Mounth num],sum (cast ([Working_Days_Including_Holidays]as int))
+ from PowerBI.dTimeTable
+ WHERE [Year]  in ('2023') 
+ group by [Mounth num]
+ 
+ select * from PowerBI.dTimeTable dtt 
+ 
+ 
+ 
+ -- Combine forecasting with bd
+   select YEAR(loadtime),MONTH(loadtime), DAY (loadtime),ROUND(SUM(CASE WHEN CLASS  not IN ('PAYD') THEN [Prod. Plan Pd] ELSE 0 END), 0) AS CORE,
+  ROUND(SUM(CASE WHEN CLASS  = 'PAYD' THEN [Prod. Plan Pd]  ELSE 0 END), 0) AS PAYD,
+  ROUND(SUM([Prod. Plan Pd]), 0) AS TOTAL
+  FROM (select * from CIOX_Ext_Feed.prodVplan.prod_plan_mapped ppm where loadtime in (
+	SELECT MAX(loadtime) as date
+	FROM CIOX_Ext_Feed.prodVplan.prod_plan_mapped ppm2 
+	WHERE YEAR(loadtime) in (select distinct YEAR(loadtime) from CIOX_Ext_Feed.prodVplan.prod_plan_mapped) and MONTH(loadtime) in (select distinct MONTH(loadtime) from CIOX_Ext_Feed.prodVplan.prod_plan_mapped)
+	GROUP BY YEAR(loadtime), MONTH(loadtime))) as Rastko
+  WHERE YEAR(loadtime) in ('2022','2023','2024')
+  GROUP BY YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  order by YEAR(loadtime),MONTH (loadtime), DAY (loadtime)
+  
+  
+ select [Year], [Mounth num],sum (cast ([Working_Days_Including_Holidays]as int))
+ from PowerBI.dTimeTable
+ WHERE [Year]  in ('2022','2023','2024') 
+ group by [Year], [Mounth num]
+ ORDER BY [Year],[Mounth num] 
+ 
+ select sum(value) from prodVplan.Fact f WHERE metric in('Fulfilled Reqs MAP') and month([date]) in('7')
+ 
+ select distinct metric from prodVplan.Fact f
+
+ select * from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ 
+ select distinct metric from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ 
+ select ds, SUM(value) AS total_value from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ where metric in ('Worked hours','Manual_Fulfilled_Reqs', 'Digital fulfilled') 
+ group by ds,metric
+ 
+ select ds, round(SUM(value),0) AS 'Worked Hours' from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ where metric in ('Worked hours') and year(ds) in ('2022','2023','2024') 
+ group by ds,metric
+ 
+ select ds, round(SUM(value),0) AS 'Fulfilled Reqs' from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ where metric in ('Fulfilled Reqs') and year(ds) in ('2022','2023','2024')  and major_class in ('PAYD')
+ group by ds,metric
+ 
+  select ds, round(SUM(value),0) AS 'HS Fulfilled Reqs' from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ where metric in ('HS Fulfilled Reqs') and year(ds) in ('2022','2023','2024')  and major_class in ('PAYD')
+ group by ds,metric
+ 
+ select ds, round(SUM(value),0) AS 'Digital fulfilled' from CIOX_Ext_Feed.PowerBI.KeyMetrics_from_2022 kmf 
+ where metric in ('Digital fulfilled') and year(ds) in ('2022','2023','2024') and major_class in ('PAYD')
+ group by ds,metric
